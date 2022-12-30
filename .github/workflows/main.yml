@@ -12,15 +12,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Node.js environment
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
         with:
           node-version: 18
 
       - name: Install CLI Tools & Dependencies
-      - run: npm install -g yarn
-      - run: yarn install
+        run: | 
+          npm install -g yarn
+          yarn install
 
       - name: Build
         run: yarn build
