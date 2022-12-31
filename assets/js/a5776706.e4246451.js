@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkrxcats_blog=self.webpackChunkrxcats_blog||[]).push([[7596],{6179:o=>{o.exports=JSON.parse('{"permalink":"/rxcats-blog/blog/tags/facebook","page":1,"postsPerPage":10,"totalPages":1,"totalCount":1,"blogDescription":"Blog","blogTitle":"Blog"}')}}]);
