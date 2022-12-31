@@ -1,0 +1,122 @@
+---
+slug: setup-develop-env
+title: 개발환경 설정하기
+authors: [rxcats]
+tags: [setup, develop, environment]
+date: 2022-12-31T12:00+09:00
+---
+
+## Mac Xcode Command Line Toos 설치
+```shell
+xcode-select --install
+```
+
+## Oh My ZSH 설치
+- https://ohmyz.sh/
+
+```shell
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+```
+
+## 패키지 관리자 Homebrew 설치
+- https://brew.sh/
+
+```shell
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+### Homebrew 환경설정
+- Homebrew 설치후 $PATH 설정이 되지 않았을 경우 brew 명령어가 동작하지 않을 수 있으므로 $PATH 설정을 추가
+- .zprofile 에 추가되도록 하기
+
+```shell
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+source ~/.zprofile
+brew doctor
+```
+
+### Homebrew 리눅스
+
+#### Requirements
+- Linux 3.2 or newer
+- Glibc 2.13 or newer
+- 64-bit x86_64 CPU
+
+#### 빌드툴 설치는 아래 명령어로 설치
+
+- Debian or Ubuntu
+```shell
+sudo apt-get install build-essential procps curl file git
+```
+
+- Fedora, CentOS, or Red Hat
+```shell
+sudo yum groupinstall 'Development Tools'
+sudo yum install procps-ng curl file git
+```
+
+#### 환경설정
+- $PATH 설정 .zprofile 에 추가
+```shell
+echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.zprofile
+source ~/.zprofile
+```
+
+## 패키지 관리자 asdf 설치
+- https://asdf-vm.com/
+- 예를 들면 jdk 17 여러개의 버전을 설치하고 관리할 수 있음
+
+```shell
+brew install asdf
+```
+
+### Node JS 설치
+
+```shell
+asdf plugin add nodejs
+asdf install nodejs 18.12.1
+asdf global nodejs 18.12.1
+```
+
+### JDK 17 설치
+```shell
+asdf plugin add java
+asdf install java zulu-17.38.21
+asdf global java zulu-17.38.21
+```
+
+## Docker 설치
+
+```shell
+brew install --cask docker
+```
+
+## JetBrains ToolBox 설치
+
+```shell
+brew install --cask jetbrains-toolbox
+```
+
+## direnv 설치
+- 디렉토리별로 환경변수를 설정할 수 있음
+
+```shell
+brew install direnv
+```
+
+### direnv 환경설정
+- $PATH 설정 .zprofile 에 추가
+```shell
+echo 'eval "$(direnv hook zsh)"' >> ~/.zprofile
+source ~/.zprofile
+```
+
+### direnv 사용방법
+- 프로젝트 디렉토리에 asdf java local 버전 설정
+- project-directory 에 들어가게 되면 direnv 트리거가 작동
+
+```shell
+cd project-directory
+asdf local java zulu-17.38.21
+direnv allow .
+```
