@@ -49,7 +49,7 @@ const config = {
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
-        },
+        }
       }),
     ],
   ],
@@ -90,7 +90,21 @@ const config = {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
       },
+      googleAdsense: {
+        dataAdClient: 'ca-pub-7296675796754275',
+      },
     }),
+
+  plugins: [
+    [
+      '@docusaurus/plugin-google-gtag',
+      {
+        trackingID: 'G-DTNR3BGJ7E',
+        anonymizeIP: true,
+      },
+    ],
+    'docusaurus-plugin-google-adsense',
+  ]
 };
 
 module.exports = config;
