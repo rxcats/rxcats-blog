@@ -9,7 +9,7 @@
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
         <item>
-            <title><![CDATA[치트 시트]]></title>
+            <title><![CDATA[Retrying Feign Calls]]></title>
             <link>https://rxcats.github.io/rxcats-blog/blog/openfeign-retry</link>
             <guid>openfeign-retry</guid>
             <pubDate>Tue, 07 Mar 2023 05:00:00 GMT</pubDate>

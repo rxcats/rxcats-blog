@@ -8,7 +8,7 @@
     <subtitle>Blog Blog</subtitle>
     <icon>https://rxcats.github.io/rxcats-blog/img/coffee-favicon.ico</icon>
     <entry>
-        <title type="html"><![CDATA[치트 시트]]></title>
+        <title type="html"><![CDATA[Retrying Feign Calls]]></title>
         <id>openfeign-retry</id>
         <link href="https://rxcats.github.io/rxcats-blog/blog/openfeign-retry"/>
         <updated>2023-03-07T05:00:00.000Z</updated>
