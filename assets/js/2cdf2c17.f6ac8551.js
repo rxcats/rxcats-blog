@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkrxcats_blog=self.webpackChunkrxcats_blog||[]).push([[8145],{3541:e=>{e.exports=JSON.parse('{"permalink":"/rxcats-blog/blog/tags/develop/page/2","page":2,"postsPerPage":1,"totalPages":2,"totalCount":2,"previousPage":"/rxcats-blog/blog/tags/develop","blogDescription":"Blog","blogTitle":"Blog"}')}}]);

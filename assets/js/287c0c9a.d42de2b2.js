@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkrxcats_blog=self.webpackChunkrxcats_blog||[]).push([[1682],{2138:a=>{a.exports=JSON.parse('{"label":"OpenFeign","permalink":"/rxcats-blog/blog/tags/open-feign","allTagsPath":"/rxcats-blog/blog/tags","count":1}')}}]);

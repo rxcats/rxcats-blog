@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkrxcats_blog=self.webpackChunkrxcats_blog||[]).push([[8265],{9650:e=>{e.exports=JSON.parse('{"permalink":"/rxcats-blog/blog/tags/environment","page":1,"postsPerPage":1,"totalPages":1,"totalCount":1,"blogDescription":"Blog","blogTitle":"Blog"}')}}]);
