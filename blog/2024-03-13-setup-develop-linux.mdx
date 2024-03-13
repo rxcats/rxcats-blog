@@ -1,0 +1,75 @@
+---
+slug: setup-develop-env-linux
+title: 개발환경 설정하기 (Ubuntu)
+authors: [rxcats]
+tags: [setup, develop, environment]
+date: 2024-03-13T12:00:00+09:00
+---
+
+# Linux (Ubuntu 22.04)
+
+## sudoers
+- sudo 명령어 사용시 비밀번호 입력을 하지 않도록 하기 위한 설정
+
+```shell
+echo "ubuntu ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/10-ubuntu
+```
+
+## 설치 명령어
+
+```shell
+sudo apt -y update
+sudo apt -y upgrade
+sudo apt install -y build-essential procps curl file git zsh unzip dirmngr gpg gawk software-properties-common apt-transport-https ca-certificates lsb-release
+
+# oh-my-zsh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM}/plugins/zsh-autosuggestions
+git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting
+
+# docker
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list &gt; /dev/null
+sudo apt -y update
+sudo apt install -y docker-ce docker-compose
+
+# redis
+curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
+sudo apt -y update
+sudo apt install -y redis
+
+# mysql8.0
+sudo apt install -y mysql-server-8.0
+
+# root 계정 비밀번호 없는 상태로 db 구축
+sudo rm -rf /var/lib/mysql
+sudo mkdir -p /var/lib/mysql
+sudo mysqld --initialize-insecure --user=mysql
+
+# my.cnf
+[mysqld]
+default_authentication_plugin=mysql_native_password
+default-time-zone = '+00:00'
+general_log = 1
+general_log_file = general_log.log
+character_set_server = utf8mb4
+collation_server = utf8mb4_general_ci
+
+
+# mysql 계정생성
+create user develop@'%' identified by 'secret';
+grant all privileges on *.* to develop@'%' with grant option;
+flush privileges;
+
+# dynamodb-local
+
+# systemctl 관리
+sudo systemctl enable mysqld
+sudo systemctl enable redis
+sudo systemctl enable dynamodb
+
+sudo systemctl restart mysqld
+sudo systemctl restart redis
+sudo systemctl restart dynamodb
+
+```
