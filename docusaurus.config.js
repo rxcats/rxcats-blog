@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Blog',
-  tagline: '백엔드개발 노하우를 공유하려 합니다.',
+  tagline: '',
   url: 'https://rxcats.github.io',
   baseUrl: '/rxcats-blog',
   onBrokenLinks: 'throw',
@@ -40,11 +40,13 @@ const config = {
             'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
         },
         blog: {
-          showReadingTime: true,
+          showReadingTime: false,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           // editUrl:
           // 'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+          blogSidebarTitle: 'All posts',
+          blogSidebarCount: 'ALL',
           postsPerPage: 1,
         },
         theme: {
@@ -64,7 +66,7 @@ const config = {
           src: 'img/coffee-logo.png',
         },
         items: [
-          { to: '/blog', label: 'Blog', position: 'left' },
+          {to: '/blog', label: 'Blog', position: 'left'},
         ],
       },
       footer: {
@@ -89,6 +91,7 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
+        additionalLanguages: ['bash', 'json', 'java', 'javascript', 'kotlin', 'csharp', 'gradle', 'php'],
       },
       googleAdsense: {
         dataAdClient: 'ca-pub-7296675796754275',

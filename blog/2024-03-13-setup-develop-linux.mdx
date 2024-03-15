@@ -6,18 +6,15 @@ tags: [setup, develop, environment]
 date: 2024-03-13T12:00:00+09:00
 ---
 
-# Linux (Ubuntu 22.04)
+## Linux (Ubuntu 22.04)
 
-## sudoers
-- sudo 명령어 사용시 비밀번호 입력을 하지 않도록 하기 위한 설정
 
-```shell
-echo "ubuntu ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/10-ubuntu
-```
+### 설치 명령어
 
-## 설치 명령어
+```bash
+# add sudoers: 시스템 권한이 필요할 때 비밀번호를 입력하지 않도록 하기 위한 설정
+echo "ubuntu ALL=(ALL) ALL\nubuntu ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/10-ubuntu
 
-```shell
 sudo apt -y update
 sudo apt -y upgrade
 sudo apt install -y build-essential procps curl file git zsh unzip dirmngr gpg gawk software-properties-common apt-transport-https ca-certificates lsb-release
@@ -28,9 +25,9 @@ git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM}/plugins
 git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting
 
 # docker
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list &gt; /dev/null
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt -y update
-sudo apt install -y docker-ce docker-compose
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose
 
 # redis
 curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
@@ -62,14 +59,177 @@ grant all privileges on *.* to develop@'%' with grant option;
 flush privileges;
 
 # dynamodb-local
+sudo mkdir -p /etc/dynamodb
+sudo mkdir -p /usr/share/dynamodb
+sudo mkdir -p /usr/share/jre
+
+# prepare jre
+wget https://cdn.azul.com/zulu/bin/zulu17.48.15-ca-jre17.0.10-linux_x64.zip
+sudo unzip zulu17.48.15-ca-jre17.0.10-linux_x64.zip -d /usr/share/jre
+
+# https://docs.aws.amazon.com/ko_kr/amazondynamodb/latest/developerguide/DynamoDBLocal.DownloadingAndRunning.html
+wget https://d1ni2b6xgvw0s0.cloudfront.net/v2.x/dynamodb_local_latest.tar.gz
+sudo tar xvfz dynamodb_local_latest.tar.gz -C /usr/share/dynamodb
+
+sudo cat <<EOF > /etc/dynamodb/config.cfg
+#The port that dynamo will run on
+port=8000
+
+#The path of the directory for the database file
+dbPath=/var/lib/dynamodb
+
+#This will make the DB region agnostic
+shared=true
+
+#Use this if you want to run the db in memory
+#note: it wont be saved if the db is stopped
+#inMemory=true
+
+#Use this for any additional args
+#additionalArgs=('-optimiozeDbBeforeStartup')
+EOF
+
+# prepare shell
+sudo cat <<EOF > /usr/bin/dynamodb
+#!/bin/bash
+
+dynamodb_java_home="/usr/share/jre/zulu17.48.15-ca-jre17.0.10-linux_x64"
+
+if [ -e /etc/dynamodb/config.cfg ]; then
+  source /etc/dynamodb/config.cfg
+else
+  shared=true
+  dbPath=/var/lib/dynamodb
+  port=8000
+fi
+
+librarypath=/usr/share/dynamodb/DynamoDBLocal_lib
+jar=/usr/share/dynamodb/DynamoDBLocal.jar
+args=("-Djava.library.path=$librarypath" "-jar $jar" "-port $port")
+
+if [ $shared ]; then
+  args+=('-sharedDb')
+fi
+
+if [ $inMemory ]; then
+  args+=('-inMemory')
+else
+  args+=("-dbPath $dbPath")
+fi
+
+args+=($additionalArgs)
+
+command="$dynamodb_java_home/bin/java"
+
+echo ${args[*]}
+
+$command ${args[*]}
+EOF
+
+sudo chmod +x /usr/bin/dynamodb
+
+# prepare systemd
+sudo cat <<EOF > /usr/lib/systemd/system/dynamodb.service
+[Unit]
+Description=Amazon DynamoDB Local Daemon
+After=network.target
+
+[Service]
+User=root
+ExecStart=/usr/bin/dynamodb
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 
 # systemctl 관리
-sudo systemctl enable mysqld
+sudo systemctl enable mysql
 sudo systemctl enable redis
 sudo systemctl enable dynamodb
 
-sudo systemctl restart mysqld
+sudo systemctl restart mysql
 sudo systemctl restart redis
 sudo systemctl restart dynamodb
+
+# tools
+sudo snap install -y btop lsd neovim
+
+
+# windows wslg 를 사용하기 위한 tools
+sudo apt install ibus-hangul
+
+# 시스템 한글 폰트
+sudo apt install fonts-noto-cjk
+
+# nerd-fonts (ligatures)
+# https://www.nerdfonts.com/font-downloads
+mkdir ~/.fonts
+wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaCode.zip
+unzip CascadiaCode.zip -d ~/.fonts
+
+# 폰트 캐시 갱신
+sudo fc-cache -f -v
+
+# jetbrains-toolbox
+# https://github.com/nagygergo/jetbrains-toolbox-install
+sudo apt install -y libfuse2 libxi6 libxrender1 libxtst6 mesa-utils libfontconfig libgtk-3-bin tar
+curl -fsSL https://raw.githubusercontent.com/nagygergo/jetbrains-toolbox-install/master/jetbrains-toolbox.sh | bash
+
+
+# .zprofile
+export XIM=ibus
+export XIM_PROGRAM=/usr/bin/ibus
+export QT_IM_MODULE=ibus
+export GTK_IM_MODULE=ibus
+export XMODIFIERS=@im=ibus
+export DefaultIMModule=ibus
+
+alias vi="vim"
+alias ls="lsd"
+alias ll="lsd -al"
+alias systemctl="sudo systemctl"
+alias apt="sudo apt"
+alias snap="sudo snap"
+
+if [ -d "/snap/bin" ]; then
+    export PATH=$PATH:/snap/bin
+fi
+
+if [ -d "$HOME/bin" ]; then
+    export PATH=$PATH:$HOME/bin
+fi
+
+if [ -d "$HOME/.local/bin" ]; then
+    export PATH=$PATH:$HOME/.local/bin
+fi
+
+if [ -f /opt/asdf-vm/asdf.sh ]; then
+    source /opt/asdf-vm/asdf.sh
+    source $HOME/.asdf/plugins/java/set-java-home.zsh
+fi
+
+if [ -d $HOME/.asdf ]; then
+    source $HOME/.asdf/asdf.sh
+    source $HOME/.asdf/plugins/java/set-java-home.zsh
+fi
+
+git_account_rxcats() {
+    git config user.name "rxcats"
+    git config user.email "windpyj80@gmail.com"
+
+    echo "name: $(git config user.name)"
+    echo "email: $(git config user.email)"
+}
+
+git_reset_pull() {
+    if [ -z "$1" ]
+    then
+        echo "require parameter origin. ex) origin/master"
+    else
+        git reset --hard $1
+        git pull
+    fi
+}
 
 ```

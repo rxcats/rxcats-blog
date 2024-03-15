@@ -1,0 +1,65 @@
+---
+slug: csharp-url-attribute
+title: c# attribute 를 활용한 API enum 정의
+authors: [rxcats]
+tags: [csharp, attribute]
+date: 2023-01-10T12:00:00+09:00
+---
+
+## 도입 동기
+
+- 클라이언트에서 API URL 정의를 어렵게 하고 있어 c# attribute 와 확장함수로 수월하게 하도록 돕기 위함
+
+## 예시
+
+
+```csharp
+
+internal class UrlValueAttribute : Attribute
+{
+    private readonly string _value;
+
+    public UrlValueAttribute(string value)
+    {
+        _value = value;
+    }
+
+    public string Value => _value;
+}
+
+public static class UrlValueAttributeExtensions
+{
+    private const string URL_PREFIX = "/api/game";
+
+    public static string GetUrl(this Enum value)
+    {
+        Type type = value.GetType();
+        FieldInfo fieldInfo = type.GetField(value.ToString());
+        UrlValueAttribute[] attributes = fieldInfo.GetCustomAttributes(typeof(UrlValueAttribute), false) as UrlValueAttribute[];
+
+        if ((attributes == null || 0 == attributes.Length) || string.IsNullOrEmpty(attributes[0].Value))
+        {
+            throw new Exception("UrlValueAttribute is empty");
+        }
+
+        StringBuilder url = new StringBuilder();
+        url.Append(Managers._director.GetServerUrl());
+        url.Append(URL_PREFIX);
+        url.Append(attributes[0].Value);
+        return url.ToString();
+    }
+}
+
+public enum GameApiType
+{
+    // Lobby API
+#if UNITY_EDITOR || UNITY_WEBGL
+    [UrlValue("/auth/login/unity")] Login,
+#else
+    [UrlValue("/auth/login")] Login,
+#endif
+    [UrlValue("/userdata/get")] UserDataGet,
+    [UrlValue("/userdata/update")] UserDataUpdate,
+}
+
+```

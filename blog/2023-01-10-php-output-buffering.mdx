@@ -1,0 +1,39 @@
+---
+slug: php-output-buffering
+title: php output_buffering 으로 인한 응답에 오류 메시지가 섞이는 문제
+authors: [rxcats]
+tags: [php, output_buffering]
+date: 2023-01-10T12:00:00+09:00
+---
+
+## 증상
+
+- 슬랙 api 를 통해 에러 메시지를 webhook 에 전송하는 api 를 사용하는 기능이 있었는데 해당 webhook 을 받던 채널이 이용 불가능한 상황.
+- 슬랙 메시지 사용한 후 응답 body 에 no_serviceAABBCCDD 처럼 no_service 가 붙는 현상
+
+## 원인
+
+- 슬랙에서는 에러가 발생하였을 경우 json 으로 응답을 주지 않고 response body 에 텍스트로 전달하는 경우가 존재
+    - https://api.slack.com/messaging/webhooks
+    - 제일 하단 Handling errors 부분에 no_service 관련 사항 참고
+- php 에서 curl 을 이용하여 api 를 호출하고 있는데 curl 옵션중에 CURLOPT_RETURNTRANSFER 를 false 로 설정하였을 경우 response body 에 일반 text 가 있으면 output_buffering 에 기록을 하는 것 같습니다.
+- 따라서 슬랙 메시지 전송시 no_service 가 먼저 output_buffering 에 들어가고 이후 응답 메시지를 빌드 하게 되어 발생한 현상.
+
+## 해결
+
+- 응답 메시지를 생성할 때 이전에 발생된 output_buffering 메시지를 지우도록 처리
+
+```php
+function oret($val) {
+    // ...
+
+    $response = JsonEnAES($arr);
+
+    // clear previously echoed item
+    // rendering 하기 전 echo 된 문자열을 지워준다.
+    ob_clean();
+
+    return $response;
+}
+
+```

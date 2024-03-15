@@ -1,0 +1,329 @@
+---
+slug: spring-message-converter
+title: Spring Message Converter 활용 패킷 암호화
+authors: [rxcats]
+tags: [Spring, MessageConverter, AES]
+date: 2024-03-14T12:00:00+09:00
+---
+
+## Spring MessageConverter 를 이용한 패킷 암/복호화
+
+### Unity 게임 클라이언트와 통신시 Http body 를 암/복호화 하기 위한 전략
+- 대칭키를 사용
+- HTTP 요청 헤더의 Content-Type 과 Accept 를 이용하여 요청과 응답 메시지의 종류를 판단할 수 있습니다.
+- 요청 헤더 Content-Type 이 application/vnd.company.alpha 인 경우 AesHttpMessageConverter 가 동작, application/json 이면 MappingJackson2HttpMessageConverter 가 동작하여 Request Body 를 디코딩 후 비즈니스 로직 Controller 로 매핑하여 줍니다.
+- 요청 헤더 Accept 가 application/vnd.company.alpha 인 경우 AesHttpMessageConverter 가 동작, 아니면 기본 Converter 가 동작 (@RestController 이면 MappingJackson2HttpMessageConverter 가 동작) 하여 Response Body 를 인코딩 후 전송하게 됩니다.
+
+
+### 서버
+```kotlin
+// AES MediaType 정의
+object AesMediaType {
+
+    const val APPLICATION_AES_VALUE = "application/vnd.company.alpha"
+    const val APPLICATION_AES_VALUE_UTF8 = "application/vnd.company.alpha;charset=UTF-8"
+
+    val APPLICATION_AES = MediaType.valueOf(APPLICATION_LITEMETA_VALUE)
+    val APPLICATION_AES_UTF8 = MediaType.valueOf(APPLICATION_LITEMETA_VALUE_UTF8)
+
+}
+
+// AES 암/복호화 MessageConverter
+class AesHttpMessageConverter : AbstractHttpMessageConverter<Any>(Charsets.UTF_8, AesMediaType.APPLICATION_AES, AesMediaType.APPLICATION_AES_UTF8) {
+    private val log by loggerK
+
+    override fun supports(clazz: Class<*>): Boolean {
+        return true
+    }
+
+    // 요청 패킷의 Content-Type 헤더가 AbstractHttpMessageConverter 생성자를 통해 설정한 MediaType에 해당되면 readInternal 적용
+    override fun canRead(mediaType: MediaType?): Boolean {
+        if (mediaType == null) {
+            return false
+        }
+        return supportedMediaTypes.contains(mediaType)
+    }
+
+    // 요청 패킷의 Accept 헤더가 AbstractHttpMessageConverter 생성자를 통해 설정한 MediaType에 해당되면 writeInternal 적용
+    override fun canWrite(mediaType: MediaType?): Boolean {
+        if (mediaType == null) {
+            return false
+        }
+        return supportedMediaTypes.contains(mediaType)
+    }
+
+    // 응답 패킷 암호화 적용
+    override fun writeInternal(t: Any, outputMessage: HttpOutputMessage) {
+        val json = Json.stringify(t)
+
+        if (log.isDebugEnabled) {
+            log.debug("write json: {}", json)
+        }
+
+        val encoded = AesCipher.encodeOrThrow(json)
+
+        if (log.isDebugEnabled) {
+            log.debug("write encoded: {}", encoded)
+        }
+
+        outputMessage.body.use {
+            it.write(encoded.toByteArray(Charsets.UTF_8))
+        }
+    }
+
+    // 요청 패킷 복호화
+    override fun readInternal(clazz: Class<out Any>, inputMessage: HttpInputMessage): Any {
+        val encoded = inputMessage.body.use { body -> String(body.readBytes(), Charsets.UTF_8) }
+
+        if (log.isDebugEnabled) {
+            log.debug("read encoded: {}", encoded)
+        }
+
+        val decoded = AesCipher.decodeOrThrow(encoded)
+
+        if (log.isDebugEnabled) {
+            log.debug("read json: {}", decoded)
+        }
+
+        return Json.parse(decoded, clazz)
+    }
+}
+
+
+// AES 암호화 관련
+
+class AesDecodeException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+class AesEncodeException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+
+object AesCipher {
+    private var secretKey by Delegates.notNull<String>()
+    private var iv by Delegates.notNull<String>()
+    private const val ALGORITHM = "AES"
+    private const val TRANSFORMATION = "AES/CBC/PKCS5Padding"
+    private const val SECRET_KEY_PROPERTIES_NAME = "app.config.aes.secret-key"
+    private const val FALLBACK_SECRET_KEY = "4f22ad9345c139094fd3d4c0ca7d5acc"
+
+    init {
+        val env = ApplicationContextProvider.getBean<Environment>()
+        secretKey = env.getProperty(SECRET_KEY_PROPERTIES_NAME, FALLBACK_SECRET_KEY)
+        iv = secretKey.substring(0, 16)
+    }
+
+    fun encode(value: String): Result<String> {
+        return runCatching {
+            val textBytes = value.toByteArray(Charsets.UTF_8)
+            val ivSpec = IvParameterSpec(iv.toByteArray(Charsets.UTF_8))
+            val newKey = SecretKeySpec(secretKey.toByteArray(Charsets.UTF_8), ALGORITHM)
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            cipher.init(Cipher.ENCRYPT_MODE, newKey, ivSpec)
+            Base64.getEncoder().encodeToString(cipher.doFinal(textBytes))
+        }
+    }
+
+    fun encode(value: ByteArray): Result<String> = encode(String(value))
+
+    fun encodeOrThrow(value: String): String {
+        val result = encode(value)
+
+        result.onFailure { e ->
+            throw AesEncodeException(e.message.orEmpty(), e)
+        }
+
+        return result.getOrThrow()
+    }
+
+    fun decode(value: String): Result<String> {
+        return runCatching {
+            val textBytes = Base64.getDecoder().decode(value)
+            val ivSpec = IvParameterSpec(iv.toByteArray(Charsets.UTF_8))
+            val newKey = SecretKeySpec(secretKey.toByteArray(Charsets.UTF_8), ALGORITHM)
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            cipher.init(Cipher.DECRYPT_MODE, newKey, ivSpec)
+            String(cipher.doFinal(textBytes), Charsets.UTF_8)
+        }
+    }
+
+    fun decode(value: ByteArray): Result<String> = decode(String(value))
+
+    fun decodeOrThrow(value: String): String {
+        val result = decode(value)
+
+        result.onFailure { e ->
+            throw AesDecodeException(e.message.orEmpty(), e)
+        }
+
+        return result.getOrThrow()
+    }
+}
+
+
+// 설정에 AesHttpMessageConverter Bean 추가
+@Configuration(proxyBeanMethods = false)
+class WebConfig : WebMvcConfigurer {
+    @Bean
+    fun httpMessageConverters(): HttpMessageConverters {
+        return HttpMessageConverters(AesHttpMessageConverter())
+    }
+}
+
+// Controller produces 항목에 적용할 MediaType 선언
+@RequestMapping("/api/hello", produces = [MediaType.APPLICATION_JSON_VALUE, AesMediaType.APPLICATION_AES_VALUE])
+@RestController
+class HelloApiController
+
+```
+
+
+### 클라이언트
+
+```csharp
+/// <summary>
+/// 패킷 암호화
+///
+/// 출처: http://blog.zebsadiq.com/post/AESCBCPKCS5Padding-EncryptionDecryption-in-C.aspx
+///
+/// 사용방법 예시
+///
+/// 암호화
+/// AesCipher.Encode("plainText", "암호화키", "암호화키".Substring(0,16))
+/// 결과 : JF+X5e3xY5QEFzmqyYJUQc4S6OCR/LVTAqILL5psshUSpyghFR4tVCgP/lkfUisANPqjKlyIQNFL32okeF6aOjcqwPJO3UDFKKC1uAv7EFU=
+///
+/// 복호화
+/// AesCipher.Decode("cipherText", "암호화키", "암호화키".Substring(0,16))
+/// 결과 : {"code":0,"message":"SUCCESS","data":{"message":"hello!"},"now":1656463353678}
+/// </summary>
+public static class AesCipher
+{
+    public static string Encode(string value)
+    {
+        using (var rm = new RijndaelManaged())
+        {
+            rm.Key = HexStringToByte(UserDefine.secretKey);
+            rm.IV = HexStringToByte(UserDefine.iv);
+            rm.Mode = CipherMode.CBC;
+            rm.Padding = PaddingMode.PKCS7;
+
+            var encrypted = EncryptStringToBytes(value, rm.Key, rm.IV);
+
+            return Convert.ToBase64String(encrypted);
+        }
+    }
+
+    public static string Decode(string value)
+    {
+        using (var rm = new RijndaelManaged())
+        {
+            rm.Key = HexStringToByte(UserDefine.secretKey);
+            rm.IV = HexStringToByte(UserDefine.iv);
+            rm.Mode = CipherMode.CBC;
+            rm.Padding = PaddingMode.PKCS7;
+
+            var ourEnc = Convert.FromBase64String(value);
+
+            return DecryptStringFromBytes(ourEnc, rm.Key, rm.IV);
+        }
+    }
+
+    private static bool IsJsonObject(string value)
+    {
+        return value.StartsWith('{');
+    }
+
+    private static bool IsJsonArray(string value)
+    {
+        return value.StartsWith('[');
+    }
+
+    private static bool IsJson(string value)
+    {
+        return IsJsonObject(value) || IsJsonArray(value);
+    }
+
+    public static string DecodeIfEncrypted(string value)
+    {
+        if (IsJson(value))
+        {
+            return value;
+        }
+
+        return Decode(value);
+    }
+
+    static byte[] EncryptStringToBytes(string plainText, byte[] key, byte[] iv)
+    {
+        if (plainText == null || plainText.Length <= 0)
+            throw new ArgumentNullException(nameof(plainText));
+        if (key == null || key.Length <= 0)
+            throw new ArgumentNullException(nameof(key));
+        if (iv == null || iv.Length <= 0)
+            throw new ArgumentNullException(nameof(key));
+
+        byte[] encrypted;
+
+        using (var rijAlg = new RijndaelManaged())
+        {
+            rijAlg.Key = key;
+            rijAlg.IV = iv;
+
+            // Create a decrytor to perform the stream transform.
+            ICryptoTransform encryptor = rijAlg.CreateEncryptor(rijAlg.Key, rijAlg.IV);
+
+            // Create the streams used for encryption.
+            using (var msEncrypt = new MemoryStream())
+            {
+                using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                {
+                    using (var swEncrypt = new StreamWriter(csEncrypt))
+                    {
+                        swEncrypt.Write(plainText);
+                    }
+
+                    encrypted = msEncrypt.ToArray();
+                }
+            }
+        }
+
+        return encrypted;
+    }
+
+    static string DecryptStringFromBytes(byte[] cipherText, byte[] key, byte[] iv)
+    {
+        if (cipherText == null || cipherText.Length <= 0)
+            throw new ArgumentNullException(nameof(cipherText));
+        if (key == null || key.Length <= 0)
+            throw new ArgumentNullException(nameof(key));
+        if (iv == null || iv.Length <= 0)
+            throw new ArgumentNullException(nameof(iv));
+
+        string plainText;
+
+        using (var rm = new RijndaelManaged())
+        {
+            rm.Key = key;
+            rm.IV = iv;
+
+            ICryptoTransform decryptor = rm.CreateDecryptor(rm.Key, rm.IV);
+
+            using (var msDecrypt = new MemoryStream(cipherText))
+            {
+                using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                {
+                    using (var srDecrypt = new StreamReader(csDecrypt))
+                    {
+                        plainText = srDecrypt.ReadToEnd();
+                    }
+                }
+            }
+        }
+
+        return plainText;
+    }
+
+    static byte[] HexStringToByte(string hexString)
+    {
+        return Encoding.UTF8.GetBytes(hexString);
+    }
+}
+
+
+```

@@ -1,0 +1,94 @@
+---
+slug: flyway
+title: flyway 를 이용한 데이터베이스 schema 관리
+authors: [rxcats]
+tags: [flyway]
+date: 2023-11-30T12:00:00+09:00
+---
+
+## DB schema 버전관리
+
+- flyway 와 gradle task 를 활용하여 db schema 를 관리하기 위한 목적
+
+### schema sql 파일 관리 예시
+
+- 예시) V2023011900001__Create_admin_user.sql
+
+    - V : Prefix (Version)
+    - 20230119 : 생성날짜
+    - 00001 : 생성 순번
+    - __ : Separator
+    - Create : CRUD 구분
+    - admin_user : 테이블명
+
+### seed sql 파일 관리 예시
+
+- 마이그레이션 진행시 매번 실행되는 sql 로 주로 데이터를 입력해주기 위한 기능
+- 예시) R__001_Seed_admin_menu.sql
+
+    - R : Prefix (Repeatable)
+    - __ : Separator
+    - 001 : 순번
+    - Seed : Seed 명시
+    - admin_menu : 테이블명
+
+### project 디렉토리 구성
+
+- root
+    - conf : 설정 디렉토리 (db 계정 등)
+        - admin.gradle.conf : admin DB 설정
+    - migration : schema sql
+        - admin
+            - V2023011900001__Create_admin_user.sql
+            - V2023011900002__Create_admin_menu.sql
+    - seed : seed sql
+        - admin
+            - R__001_Seed_admin_user.sql
+            - R__002_Seed_admin_menu.sql
+
+### gradle Task 를 이용한 마이그레이션 예시
+
+```gradle build.gradle.kts
+// flyway gradle plugin 설정
+plugins {
+    id("org.flywaydb.flyway") version "9.20.1"
+}
+
+// flyway 가 gradle task 실행시 DB에 접근할 수 있도록 하기 위해 buildscript 안에 classpath 의존성을 추가 해 줘야 함
+buildscript {
+    dependencies {
+        // classpath dependencies require for flyway database migrate
+        classpath("org.flywaydb:flyway-mysql:9.20.1")
+        classpath("com.mysql:mysql-connector-j:8.0.33")
+    }
+}
+
+val flywayAdminDbLocations = arrayOf("filesystem:db/migration/admin", "filesystem:db/seed/admin")
+
+// 마이그레이션 Task 등록
+// 실행 : `./gradlew adminDbMigrate`
+tasks.register<FlywayMigrateTask>("adminDbMigrate") {
+    // 프로젝트에서 flyway 마이그레이션이 있는 경로
+    workingDirectory = "${rootDir.absolutePath}/db-migration"
+
+    // admin db 에 해당되는 설정파일과 스키마, seed sql 이 있는 디렉토리 경로
+    configFiles = arrayOf("conf/admin.gradle.conf")
+
+    // flyway.locations 에 해당되는 경로 설정
+    locations = arrayOf("filesystem:db/migration/admin", "filesystem:db/seed/admin")
+
+    baselineOnMigrate = true
+}
+
+// clean Task 등록 (drop tables)
+// 실행 : `./gradlew adminDbClean`
+tasks.register<FlywayCleanTask>("adminDbClean") {
+    workingDirectory = "${rootDir.absolutePath}/db-migration"
+    configFiles = arrayOf("conf/admin.gradle.conf")
+    locations = arrayOf("filesystem:db/migration/admin", "filesystem:db/seed/admin")
+    baselineOnMigrate = true
+    cleanDisabled = false
+}
+
+```
+

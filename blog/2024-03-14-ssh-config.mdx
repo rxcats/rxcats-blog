@@ -1,0 +1,50 @@
+---
+slug: ssh-config
+title: SSH config 로 git 계정 연동하기
+authors: [rxcats]
+tags: [ssh, config, develop]
+date: 2024-03-14T12:00:00+09:00
+---
+
+## SSH config 로 git 계정 연동하기
+
+### git 계정 사용시 개인 계정과 회사계정 등 여러개를 사용하기 위한 용도
+
+- config 파일을 이용하여 스위칭
+```bash
+# 경로: ~/.ssh/config
+
+# 회사 github
+Host gh_company
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/gh-rsa-company/id_rsa
+
+# 회사 bitbucket
+Host bb_company
+  HostName bitbucket.org
+  User git
+  IdentityFile ~/.ssh/bb-rsa-company/id_rsa
+
+# 개인 github
+Host gh_private
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/gh-rsa-rxcats/id_rsa
+
+```
+
+- config 설정을 이용하여 git clone
+
+```bash
+
+# 회사 프로젝트 clone (1)
+git clone git@gh_company:gh_company-env/server-project-alpha.git
+
+# 회사 프로젝트 clone (2)
+git clone git@bb_company:bb_company-env/server-project-beta.git
+
+# 개인 프로젝트 clone
+git clone git@gh_private:gh_private-env/server-project-omega.git
+
+```
