@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkrxcats_blog=self.webpackChunkrxcats_blog||[]).push([[3774],{3131:a=>{a.exports=JSON.parse('{"label":"flyway","permalink":"/rxcats-blog/blog/tags/flyway","allTagsPath":"/rxcats-blog/blog/tags","count":1}')}}]);
