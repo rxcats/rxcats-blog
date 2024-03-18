@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkrxcats_blog=self.webpackChunkrxcats_blog||[]).push([[3505],{703:s=>{s.exports=JSON.parse('{"label":"Shop Titans","permalink":"/rxcats-blog/blog/tags/shop-titans","allTagsPath":"/rxcats-blog/blog/tags","count":1}')}}]);

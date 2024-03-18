@@ -2,11 +2,25 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://rxcats.github.io/rxcats-blog/blog</id>
     <title>Blog Blog</title>
-    <updated>2024-03-14T03:00:00.000Z</updated>
+    <updated>2024-03-18T03:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://rxcats.github.io/rxcats-blog/blog"/>
     <subtitle>Blog Blog</subtitle>
     <icon>https://rxcats.github.io/rxcats-blog/img/coffee-favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[Shop Titans - Official Data Spreadsheet]]></title>
+        <id>shoptitans-spreadsheet</id>
+        <link href="https://rxcats.github.io/rxcats-blog/blog/shoptitans-spreadsheet"/>
+        <updated>2024-03-18T03:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Official Data Spreadsheet]]></summary>
+        <content type="html"><![CDATA[<h2 class="anchor anchorWithStickyNavbar_LWe7" id="official-data-spreadsheet">Official Data Spreadsheet<a class="hash-link" href="#official-data-spreadsheet" title="Direct link to heading">​</a></h2><p><a href="https://docs.google.com/spreadsheets/d/1WLa7X8h3O0-aGKxeAlCL7bnN8-FhGd3t7pz2RCzSg8c" target="_blank" rel="noopener noreferrer">바로가기</a></p>]]></content>
+        <author>
+            <name>rxcats</name>
+            <uri>https://github.com/rxcats</uri>
+        </author>
+        <category label="Shop Titans" term="Shop Titans"/>
+        <category label="Official Data Spreadsheet" term="Official Data Spreadsheet"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Spring Message Converter 활용 패킷 암호화]]></title>
         <id>spring-message-converter</id>

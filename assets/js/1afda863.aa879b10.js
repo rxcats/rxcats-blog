@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkrxcats_blog=self.webpackChunkrxcats_blog||[]).push([[2981],{1212:e=>{e.exports=JSON.parse('{"permalink":"/rxcats-blog/blog/page/2","page":2,"postsPerPage":1,"totalPages":9,"totalCount":9,"previousPage":"/rxcats-blog/blog","nextPage":"/rxcats-blog/blog/page/3","blogDescription":"Blog","blogTitle":"Blog"}')}}]);

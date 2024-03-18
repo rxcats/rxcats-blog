@@ -4,10 +4,20 @@
         <title>Blog Blog</title>
         <link>https://rxcats.github.io/rxcats-blog/blog</link>
         <description>Blog Blog</description>
-        <lastBuildDate>Thu, 14 Mar 2024 03:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Mon, 18 Mar 2024 03:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[Shop Titans - Official Data Spreadsheet]]></title>
+            <link>https://rxcats.github.io/rxcats-blog/blog/shoptitans-spreadsheet</link>
+            <guid>shoptitans-spreadsheet</guid>
+            <pubDate>Mon, 18 Mar 2024 03:00:00 GMT</pubDate>
+            <description><![CDATA[Official Data Spreadsheet]]></description>
+            <content:encoded><![CDATA[<h2 class="anchor anchorWithStickyNavbar_LWe7" id="official-data-spreadsheet">Official Data Spreadsheet<a class="hash-link" href="#official-data-spreadsheet" title="Direct link to heading">​</a></h2><p><a href="https://docs.google.com/spreadsheets/d/1WLa7X8h3O0-aGKxeAlCL7bnN8-FhGd3t7pz2RCzSg8c" target="_blank" rel="noopener noreferrer">바로가기</a></p>]]></content:encoded>
+            <category>Shop Titans</category>
+            <category>Official Data Spreadsheet</category>
+        </item>
         <item>
             <title><![CDATA[Spring Message Converter 활용 패킷 암호화]]></title>
             <link>https://rxcats.github.io/rxcats-blog/blog/spring-message-converter</link>
