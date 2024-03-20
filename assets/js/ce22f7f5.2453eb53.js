@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkrxcats_blog=self.webpackChunkrxcats_blog||[]).push([[9145],{818:t=>{t.exports=JSON.parse('{"label":"Custom AttributeConverter","permalink":"/rxcats-blog/blog/tags/custom-attribute-converter","allTagsPath":"/rxcats-blog/blog/tags","count":1}')}}]);

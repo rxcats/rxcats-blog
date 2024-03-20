@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkrxcats_blog=self.webpackChunkrxcats_blog||[]).push([[1295],{2348:a=>{a.exports=JSON.parse('{"label":"DynamoDB","permalink":"/rxcats-blog/blog/tags/dynamo-db","allTagsPath":"/rxcats-blog/blog/tags","count":1}')}}]);
