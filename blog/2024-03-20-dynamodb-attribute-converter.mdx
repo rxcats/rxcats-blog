@@ -1,0 +1,107 @@
+---
+title: DynamoDB Custom AttributeConverter
+authors: [rxcats]
+tags: [DynamoDB, Custom AttributeConverter]
+date: 2024-03-20T12:00:00+09:00
+---
+
+## Custom AttributeConverter 예시
+
+- 사용자 정의 속성 변환기를 이용하여 데이터 압축하여 저장하기
+- [공식문서](https://docs.aws.amazon.com/ko_kr/sdk-for-java/latest/developer-guide/ddb-en-client-adv-features-conversion.html)
+- [기본제공 컨버터](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/enhanced/dynamodb/AttributeConverter.html)
+
+### Deflater, Inflater, Base64 를 이용하여 컨버터 생성
+
+```kotlin
+class CompressAttributeConverter : AttributeConverter<String> {
+    override fun transformFrom(value: String): AttributeValue {
+        // Deflater를 사용하여 string 을 압축하여 base64 encode
+        val base64 = Compression.compress(value)
+        return AttributeValue.builder()
+            .s(base64)
+            .build()
+    }
+
+    override fun transformTo(attr: AttributeValue?): String {
+        // base64 decode 후, Inflater를 사용하여 압축해제
+        if (attr == null) return ""
+        val base64 = attr.s()
+        return Compression.decompress(base64)
+    }
+
+    override fun type(): EnhancedType<String> {
+        return EnhancedType.of(String::class.java)
+    }
+
+    override fun attributeValueType(): AttributeValueType {
+        return AttributeValueType.S
+    }
+
+    companion object {
+        fun create(): CompressAttributeConverter {
+            return CompressAttributeConverter()
+        }
+    }
+
+    private object Compression {
+        @OptIn(ExperimentalEncodingApi::class)
+        fun compress(input: String): String {
+            val bytes = input.toByteArray()
+            return Base64.encode(compress(bytes))
+        }
+
+        @OptIn(ExperimentalEncodingApi::class)
+        fun decompress(input: String): String {
+            val bytes = decompress(Base64.decode(input.toByteArray()))
+            return String(bytes)
+        }
+
+        private fun compress(input: ByteArray): ByteArray {
+            val deflater = Deflater()
+            deflater.setInput(input)
+            deflater.finish()
+
+            val outputStream = ByteArrayOutputStream()
+            val buffer = ByteArray(1024)
+
+            while (!deflater.finished()) {
+                val compressedSize = deflater.deflate(buffer)
+                outputStream.write(buffer, 0, compressedSize)
+            }
+
+            return outputStream.toByteArray()
+        }
+
+        private fun decompress(input: ByteArray): ByteArray {
+            val inflater = Inflater()
+            inflater.setInput(input)
+
+            val outputStream = ByteArrayOutputStream()
+            val buffer = ByteArray(1024)
+
+            while (!inflater.finished()) {
+                val decompressedSize = inflater.inflate(buffer)
+                outputStream.write(buffer, 0, decompressedSize)
+            }
+
+            return outputStream.toByteArray()
+        }
+    }
+}
+```
+
+### 엔티티 선언
+
+```kotlin
+@DynamoDbBean
+data class CompressTest(
+    @get:DynamoDbPartitionKey
+    var pk: String = "",
+
+    // 압축을 적용할 필드에 컨버터 명시
+    @get:DynamoDbConvertedBy(CompressAttributeConverter::class)
+    var meta: String = "",
+)
+
+```
